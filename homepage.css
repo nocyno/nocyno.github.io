@@ -1,0 +1,104 @@
+body {
+    font-family: 'Montserrat', sans-serrif;
+}
+
+#name {
+    font-size: 50px;
+}
+
+.sectionHeader {
+    font-size: 50px;
+}
+
+div.schoolCard {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: 10px;
+    height: 240px;
+    border: 2px solid black;
+    border-radius: 20px;
+}
+
+div.schoolLogoContainer {
+    width: 220px;
+    min-width: 220px;
+    height: 220px;
+    border-radius: 10px;
+    margin-left: 10px;
+}
+
+div.schoolInfo {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    font-size: 20px;
+}
+
+#universityName {
+    margin-top: 0px;
+}
+
+#gpa {
+    margin-bottom: 0px;
+}
+
+div#uscLogoContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    background-color: #990000;
+}
+
+img#usc {
+    width: 200;
+    height: 114px;
+}
+
+img#hmc {
+    width: 100%;
+    height: auto;
+}
+
+.subsectionHeader {
+    display: flex;
+    flex-direction: row;
+}
+
+div.pl-subsection {
+    margin: 10px;
+    border-radius: 20px;
+    border: 2px solid black;
+}
+
+div.plSubsectionHeader{
+    display: flex;
+    justify-content: center;
+    font-size: 30px;
+}
+
+div.pl-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+div.pl {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 40px;
+}
+
+img.pl-icon {
+    width: 100px;
+    height: 100px;
+    filter: drop-shadow(8px 8px 10px gray);
+}
+
+p.pl-name {
+    margin: 20px;
+}
