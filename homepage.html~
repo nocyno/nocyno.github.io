@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="../styles/cv.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:100">
+  </head>
+
+  <body>
+    <div id="nameSection">
+      <h1 id="name">Jacob Waite | jacobwaiteofficial@gmail.com</h1>
+    </div>
+
+    <hr>
+
+    <div class="section">
+      <h1 class="sectionHeader">Education</h1>
+      <div class="schoolCard">
+	<div id="uscLogoContainer" class="schoolLogoContainer">
+	  <img id="usc" class="schoolLogo" src="../resources/usc.png"/>
+	</div>
+	<div class="schoolInfo">
+	  <div class="schoolInfoText">
+	    <h2 id="universityName"> University of Southern California </h2>
+	    <h2> Master's in Computer Science </h2>
+	    <h2> Aug 2023 - Dec 2024 </h2>
+	    <h2 id="gpa"> GPA: 3.750</h2>
+	  </div>
+	</div>
+      </div>
+
+      <div class="schoolCard">
+	<div class="schoolLogoContainer">
+	  <img id="hmc" class="schoolLogo" src="../resources/hmc.png"/>
+	</div>
+	<div class="schoolInfo">
+	  <div class="schoolInfoText">
+	    <h2 id="universityName"> Harvey Mudd College </h2>
+	    <h2> Bachelor's in Computer Science </h2>
+	    <h2> Aug 2017 - May 2021 </h2>
+	    <h2 id="gpa"> GPA: 3.863</h2>
+	  </div>
+	</div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+      <h1 class="sectionHeader">Skills</h1>
+      <div class="pl-subsection">
+	<div class="plSubsectionHeader">
+	  <h2>Programming Languages</h2>
+	</div>
+	<div class="pl-row">
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/python.svg"/>
+	    <p class="pl-name">Python</p>
+	  </div>
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/c.svg"/>
+	    <p class="pl-name">C</p>
+	  </div>
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/html.svg"/>
+	    <p class="pl-name">HTML</p>
+	  </div>
+	</div>
+	<div class="pl-row">
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/css.svg"/>
+	    <p class="pl-name">CSS</p>
+	  </div>
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/js.png"/>
+	    <p class="pl-name">JavaScript</p>
+	  </div>
+	</div>
+      </div>
+
+      <div class="pl-subsection">
+	<div class="plSubsectionHeader">
+	  <h2>Frameworks</h2>
+	</div>
+	<div class="pl-row">
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/android.svg"/>
+	    <p class="pl-name">Android</p>
+	  </div>
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/angular.svg"/>
+	    <p class="pl-name">Angular</p>
+	  </div>
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/nodejs.svg"/>
+	    <p class="pl-name">NodeJS</p>
+	  </div>
+	</div>
+      </div>
+
+      <div class="pl-subsection">
+	<div class="plSubsectionHeader">
+	  <h2>Libraries</h2>
+	</div>
+	<div class="pl-row">
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/numpy.svg"/>
+	    <p class="pl-name">Numpy</p>
+	  </div>
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/pandas.svg"/>
+	    <p class="pl-name">Pandas</p>
+	  </div>
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/sklearn.svg"/>
+	    <p class="pl-name">Scikit-Learn</p>
+	  </div>
+	</div>
+	<div class="pl-row">
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/tf.svg"/>
+	    <p class="pl-name">TensorFlow</p>
+	  </div>
+	  <div class="pl">
+	    <img class="pl-icon" src="../resources/torch.svg"/>
+	    <p class="pl-name">PyTorch</p>
+	  </div>
+	</div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+      <h1 class="sectionHeader">Experience</h1>
+      <div class="subsection">
+	<div class="subsectionHeader">
+	  <div class="subsectionHeaderInfo">
+	    <h1 class="subsectionHeaderInfoMain">USC Big Data in Biotransport Center<h1>
+	    <h1 class="subsectionHeaderInfoAux">Machine Learning Researcher<h1>
+	  </div>
+	  <div class="subsectionHeaderDetails">
+	    <h1 class="subsectionPlace">Los Angeles, CA<h1>
+	    <h1 class="subsectionDates">October 2023-August 2024<h1>
+	  </div>
+	</div>
+	<div class="subsectionBody">
+	</div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="section">
+      <h1 class="sectionHeader">Academic Projects</h1>
+    </div>
+
+  </body>
+</html>
