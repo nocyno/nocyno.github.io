@@ -32,11 +32,14 @@ div.schoolInfo {
     width: 100%;
     display: flex;
     flex-direction: row;
-    justify-content: space-evenly;
     font-size: 20px;
 }
 
-#universityName {
+div.schoolInfoText {
+    margin-left: 20px;
+}
+
+.universityName {
     margin-top: 0px;
 }
 
@@ -101,4 +104,17 @@ img.pl-icon {
 
 p.pl-name {
     margin: 20px;
+}
+
+img.companyLogo {
+    width: 100%;
+    height: auto;
+}
+
+div.companyInfoText {
+    margin-left: 20px;
+}
+
+img#ibarakiLogo {
+    height: 100%;
 }
