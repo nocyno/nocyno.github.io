@@ -6,26 +6,37 @@ body {
     font-size: 50px;
 }
 
+div.section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .sectionHeader {
     font-size: 50px;
+}
+
+div.schools {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    width: 100%;
+}
+
+img.schoolLogo {
+    width: 45%;
+    height: auto;
+    border-radius: 20px;
 }
 
 div.schoolCard {
     display: flex;
     flex-direction: row;
     align-items: center;
-    margin: 10px;
+    width: 40%;
     height: 240px;
     border: 2px solid black;
     border-radius: 20px;
-}
-
-div.schoolLogoContainer {
-    width: 220px;
-    min-width: 220px;
-    height: 220px;
-    border-radius: 10px;
-    margin-left: 10px;
 }
 
 div.schoolInfo {
@@ -47,23 +58,6 @@ div.schoolInfoText {
     margin-bottom: 0px;
 }
 
-div#uscLogoContainer {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
-    background-color: #990000;
-}
-
-img#usc {
-    width: 200;
-    height: 114px;
-}
-
-img#hmc {
-    width: 100%;
-    height: auto;
-}
-
 .subsectionHeader {
     display: flex;
     flex-direction: row;
@@ -71,8 +65,7 @@ img#hmc {
 
 div.pl-subsection {
     margin: 10px;
-    border-radius: 20px;
-    border: 2px solid black;
+    width: 100%;
 }
 
 div.plSubsectionHeader{
@@ -106,9 +99,21 @@ p.pl-name {
     margin: 20px;
 }
 
-img.companyLogo {
+div.experienceCard {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     width: 100%;
+    border-radius: 20px;
+    margin-top: 30px;
+    margin-bottom: 30px;
+}
+
+img.companyLogo {
+    width: 30%;
     height: auto;
+    border-radius: 20px;
+    margin-left: 5%;
 }
 
 div.companyInfoText {
