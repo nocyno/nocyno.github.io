@@ -123,3 +123,7 @@ div.companyInfoText {
 img#ibarakiLogo {
     height: 100%;
 }
+
+div.projectCard {
+    width: 100%;
+}
