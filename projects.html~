@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="./projects.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:100">
+  </head>
+
+  <body>
+    <div class="centeringContainer">
+      <div class="content">
+	<h1>Welcome!</h1>
+	<h2>
+	  Here you can find links to pages related to some projects I have worked on in the past. Pages may include demos, source code, or just a short description of the project and my role.
+	</h2>
+	<a href="./bg_fg_project.html">Foreground/Background Segmentation and Compression Project</a>
+	<a href="./weather_webapp.html">Weather Webapp</a>
+      </div>
+    </div>
+  </body>
+</html>

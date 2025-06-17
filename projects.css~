@@ -1,0 +1,9 @@
+    div.centeringContainer {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+    }
+
+    div.content {
+	width: 1000px;
+    }

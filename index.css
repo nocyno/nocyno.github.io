@@ -1,129 +1,66 @@
+@keyframes menuItemTextAnimation {
+    from {
+	position: relative;
+	top: 100px;
+	color: white;
+    }
+    to {
+	position: relative;
+	top: 0px;
+	color: black;
+    }
+}
+
 body {
     font-family: 'Montserrat', sans-serrif;
 }
 
-#name {
-    font-size: 50px;
+div#portraitBox {
+    width: 100vw;
+    height: 34dvh;
+    clip-path: polygon(0 0, 100% 0, 50% 50%, 0% 100%);
 }
 
-div.section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.sectionHeader {
-    font-size: 50px;
-}
-
-div.schools {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-    width: 100%;
-}
-
-img.schoolLogo {
-    width: 45%;
-    height: auto;
-    border-radius: 20px;
-}
-
-div.schoolCard {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 40%;
-    height: 240px;
-    border: 2px solid black;
-    border-radius: 20px;
-}
-
-div.schoolInfo {
-    width: 100%;
-    display: flex;
-    flex-direction: row;
-    font-size: 20px;
-}
-
-div.schoolInfoText {
-    margin-left: 20px;
-}
-
-.universityName {
-    margin-top: 0px;
-}
-
-#gpa {
-    margin-bottom: 0px;
-}
-
-.subsectionHeader {
-    display: flex;
-    flex-direction: row;
-}
-
-div.pl-subsection {
-    margin: 10px;
-    width: 100%;
-}
-
-div.plSubsectionHeader{
+div#nameBox {
     display: flex;
     justify-content: center;
-    font-size: 30px;
 }
 
-div.pl-row {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-    margin-top: 10px;
-    margin-bottom: 10px;
+h1#nameText {
+    font-size: 8dvh;
+    margin: 0px;
 }
 
-div.pl {
+img#selfPortrait {
+    width: 100vw;
+    height: 34dvh;
+}
+
+div.overview {
+    height: 34dvh;
+}
+
+div.menuItem {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
-    font-size: 40px;
+    height: 21dvh;
 }
 
-img.pl-icon {
-    width: 100px;
-    height: 100px;
-    filter: drop-shadow(8px 8px 10px gray);
+a.menuItemText {
+    font-size: 8dvh;
+    animation-name: menuItemTextAnimation;
+    animation-duration: 1.5s;
+    animatation-iteration-count: infinite;
 }
 
-p.pl-name {
-    margin: 20px;
+a.menuItemText:visited {
+    color: black;
 }
 
-div.experienceCard {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    border-radius: 20px;
-    margin-top: 30px;
-    margin-bottom: 30px;
-}
-
-img.companyLogo {
-    width: 30%;
-    height: auto;
-    border-radius: 20px;
-    margin-left: 5%;
-}
-
-div.companyInfoText {
-    margin-left: 20px;
-}
-
-img#ibarakiLogo {
-    height: 100%;
-}
-
-div.projectCard {
-    width: 100%;
+hr.menuItemDivider {
+    width: 90vw;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    color: #C0C0C0
 }

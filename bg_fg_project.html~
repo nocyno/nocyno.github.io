@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="./bg_fg_project.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat:100">
+  </head>
+
+  <body>
+    <div class="centeringContainer">
+      <div class="content">
+	<h1>Foreground/Background Segmentation and Compression Project</h1>
+	<h2>Introduction</h2>
+	<p>
+	  For the final project of my "Multimedia System Design" class at USC, I worked with a partner on a "smart" video compression project. The basic idea was that people pay less attention to the background of videos compared to the foreground, so you can get away with higher but lossier compression for parts of video frames that are the background as opposed to the foreground. However, this requires being able to segment the foreground and background regions of each frame.
+	</p>
+	<p>
+	  My role in the project was mainly to write code that did the foreground/background segmentation. It worked as follows.
+	</p>
+
+	<h2>How it works</h2>
+	<p>
+	  The project instructions recommended we divide each frame into 16x16 pixel regions called "macroblocks", compute motion vectors for each macroblock, and then figure out a way to use the computed motion vectors to determine which macroblocks were part of the foreground and which were part of the background. The fundamental concept was that things in the foreground would likely be moving differently from the background, such as people walking along a static background, and so you could differentiate between the two simply by their motion vectors.
+	</p>
+	<p>
+	  This was by no means a perfect method. To begin with, the foreground and background do not always have different motion vectors. Additionally, a 16x16 pixel block may sometimes contain pixels from both the foreground and the background. Despite these problems, this method did work well at times, as we shall see.
+	</p>
+
+	<p>
+	  First off, here is the video we will be using as a demo.
+	</p>
+	<img src="./resources/no_compression_demo.gif"/>
+
+	<p>
+	  On the recommendation of my partner, the first thing we did before computing the motion vectors was blur each frame with a Gaussian filter, which seemed to help with motion vector computation by reducing noise. After that, pixel motion between each frame was computed using OpenCV's calcOpticalFlowFarneback function, which uses an algorithm created by Gunnar Farneback to calculate optical flow. The motion vectors of the pixels in each macroblock were averaged to get a motion vector for each macroblock. Below is an example of the motion vectors calculated for the 30th frame of the sample video.
+	</p>
+	<img src="./resources/original_motion_vecs.png"/>
+	<p>
+	  While the motion vectors might look rather scattered without a discernible "cluster" belonging to background motion vectors, keep in mind each frame has 2040 motion vectors in this example. Thus, most of the background vectors are in the small "cloud" concentrated around (0, 0), and make up the vast majority of all of the motion vectors
+	</p>
+
+	<p>
+	  The nature of the motion vectors will vary between videos. If there is a lot of fast motion in a particular video, the motion vectors might have much larger magnitudes on average. In order to make the algorithm a bit more video agnostic, the motion vectors are rescaled according to the following formula.
+	</p>
+	<p>
+	  Rescaling the vectors of the sample video's 30th frame gives us the following motion vectors.
+	</p>
+	<img src="./resources/scaled_motion_vecs.png"/>
+
+	<p>
+	  We then use agglomorative clustering to find clusters of motion vectors. We make the naive assumption that the largest cluster is composed of background motion vectors. Doing so for all motion vectors in the video and drawing the motion vectors onto the video yields the following result. Note that the motion vectors of macroblocks deemed part of the foreground are colored green, and those of macroblocks deemed part of the background are colored red.
+	</p>
+	<img src="./resources/rough_motion_vecs.gif"/>
+	<p>
+	  This is a pretty good result, but there are a few problems. For one, there are frames where motion vectors that should be part of the background suddenly flash green, and then become red again in the next frame. This might be due to noise in the calculated optical flows of individual pixels. Another issue can be seen in the following image.
+	</p>
+	<img src="./resources/rough_problem.png"/>
+	<p>
+	  We see there are clearly some motion vectors, such as those at the legs of the tennis player, that are classified as red background motion vectors when they should be green foreground motion vectors. Even some small groups of motion vectors that have been classified as "background" are surrounded by motion vectors classified as "foreground". This seems a bit strange. This could be due to noise in the original optical flow calculation, or poor tuning of hyperparameters in the optical flow calculation or the clustering algorithm. One other possibility that could lead to this issue in some cases is the homogeneity of color in an object. Optical flow algorithms look at a pixel in some frame and try to find where that pixel went in the next frame. If an image consists of entirely red pixels except for one blue pixel, and that blue pixel moves slightly between frame n and frame n+1, it is easy to calculate the flow of that blue pixel. You could just search for where the blue pixel is in frame n+1 in a small neighborhood around where the pixel originally was in frame n, since objects tend to not move huge distances between frames. However, if you have a large blue square in the image and it moves slightly between frames n and n+1, how do you find the optical flow of the pixels in the blue square? A blue pixel in the center of the square will have another pixel nearby in the square take its place after the move. In fact, the neighborhood around where that pixel was will probably look entirely the same in frame n+1. An entirely blue region of the square will just move in to replace the old entirely blue region. It will be difficult to detect movement anywhere but the edges of the square, since there will be almost no visual change between frames outside of those regions.
+	</p>
+
+	<p>
+	  To solve the issue, we did the following. For each frame, we ran agglomorative clustering on the <bold>locations</bold> of all of the macroblocks classified as "foreground" within the frame. The idea is that a cluster of nearby foreground macroblocks make up a single object (or a part of a single object, such as a leg). We then get bounding boxes around each cluster, and flip any background macroblock classification within the bounding box to a foreground classification. The idea is that any background classification within that bounding box is likely a misclassification, since that macroblock lies within a cluster of foreground macroblocks, and thus is likely part of a foreground object. We referred to this process as "intrafrace foreground status correction", since it uses information entirely within each frame to correct the foreground statuses of macroblocks within that frame.
+	</p>
+
+	<p>
+	  One other problem that needed to resolve was the occassional "flashes" of green or red seen in the motion vector video. Likely due to noise in the optical flow calculation, large swaths of background macroblocks would sometimes be misclassified as foreground macroblocks in a single frame before again correctly being classified as background macroblocks in the next frame. The oppositie would also happen for foreground macroblocks. To solve this, we simply made a rule that if a macroblock is classified as background in frames n-1 and n+1 but foreground in frame n, then its classification in frame n will be set to background.  IF a macroblock is classified as foreground in frames n-1 and n+1, but background in frame n. then we switch its classification in frame n to foreground. We called this "interframe foreground status correction", because it relies on information across multiple frames to correct the foreground status of macroblocks in a single frame.
+	</p>
+
+	<p>
+	  First applying intraframe then interframe foreground status corrections, we get the following result.
+	</p>
+
+
+	<img src="./resources/motion_vec_demo.gif"/>
+
+	<p>
+	  This is a great result!
+	</p>
+
+	<h2>Results</h2>
+
+	<p>
+	  Using the above seen foreground/background macroblock classifications, we can highly compress the background macroblocks to get the following result.
+	</p>
+
+	<img src="./resources/high_compression_demo.gif"/>
+
+	<p>
+	  This compression is a bit too obvious. If we do not compress background macroblockas as much, we get the following result.
+	</p>
+
+	<img src="./resources/medium_compression_demo.gif"/>
+
+	<p>
+	  Thank you so much for reading!
+	</p>
+
+    <pre>
+    <code class="python">
+"""Functions Related to Motion Compensation"""
+
+from typing import List, Tuple
+
+import cv2
+import numpy as np
+import numpy.typing as npt
+from sklearn.cluster import AgglomerativeClustering  # type: ignore
+from tqdm import tqdm  # type: ignore
+
+from interface.dct import BlocksNxN
+from interface.export import MacroBlock
+
+
+# pylint: disable=too-many-locals
+def get_motion_vectors(input_video: npt.NDArray[np.uint8], block_length: int = 16) -&gt npt.NDArray[np.float32]:
+    """
+    Divides each frame of the input video into a grid of block_length x block_length
+    blocks of pixels, and then calculates a vector pointing from the current location
+    of the block to the estimated location of the block in the last frame. (Note, this
+    is opposite of the direction the block "travels" from the previous frame to the
+    current frame). This displacement is calculated as the average displacement of
+    all of the pixels in that block.
+
+    The pixel displacements are calcualted from the optical flow of pixels found using
+    the Gunnar-Farneback optical flow algorithm.
+
+    The resulting motion vectors for the video are stored in a numpy array of shape
+    (number of frames, block grid height, block grid width, 2). The individual motion
+    vectors store the x and y displacements in a 2D vector in the order
+    [x displacement, y displacement].
+
+    Note: Because the first frame in the video has no previous frame to calculate
+    motion vectors from, the motion vectors for the first frame are all [0, 0].
+
+    Args:
+        input_video (npt.NDArray[np.float32]): Numpy array representing a video.
+        block_length (int): Side-length of the blocks to calculate motion vectors for.
+
+    Returns:
+        numpy.typing.NDArray[np.float32]: A 4D numpy array representing the motion vectors
+                                          of the blocks in each frame.
+    """
+    frames = input_video.shape[0]
+    frame_height = input_video.shape[1]
+    frame_width = input_video.shape[2]
+
+    grid_height = input_video.shape[1] // block_length
+    grid_width = input_video.shape[2] // block_length
+
+    pixel_motion_vecs = np.zeros((frames, frame_height, frame_width, 2)).astype(np.float32)
+    motion_vecs = np.zeros((frames, grid_height, grid_width, 2)).astype(np.float32)
+
+    # Apply Gaussian Blur to the image before computing motion vector to reduce noise
+    input_video_blurred = np.zeros_like(input_video).astype(np.float32)
+    for frame in tqdm(range(frames), "Applying Noise Reduction Filter to Video Frames"):
+        input_video_blurred[frame] = cv2.GaussianBlur(input_video[frame], (5, 5), 0)
+
+        # alternate option is bilateral filter (preserves edges better)
+        # input_video_blurred[frame] = cv2.bilateralFilter(input_video[frame], 10, 100, 100)
+
+    # Compute motion vectors for individual pixels. Do not loop over the first
+    # frame to keep all of its motion vectors as [0, 0]
+    for f in tqdm(range(1, frames), "Computing Pixel Motion Vectors"):
+        cv2.calcOpticalFlowFarneback(
+            input_video_blurred[f, :, :, 0],
+            input_video_blurred[f - 1, :, :, 0],
+            pixel_motion_vecs[f, :, :, :],
+            0.5,
+            3,
+            15,  # 15
+            3,
+            5,
+            1.2,
+            0,
+        )
+
+    # Compute motion vectors for each block as the average of the motion vectors of the pixels in that block
+    for f in tqdm(range(0, frames), "Computing Block Motion Vectors"):
+        for v in range(grid_height):
+            for u in range(grid_width):
+                block_y = v * block_length
+                block_x = u * block_length
+                if v == grid_height - 1:
+                    motion_vecs[f, v, u, 0:1] = pixel_motion_vecs[
+                        f, block_y : block_y + block_length - 4, block_x : block_x + block_length, 0
+                    ].mean()
+                    motion_vecs[f, v, u, 1:2] = pixel_motion_vecs[
+                        f, block_y : block_y + block_length - 4, block_x : block_x + block_length, 1
+                    ].mean()
+                else:
+                    motion_vecs[f, v, u, 0:1] = pixel_motion_vecs[
+                        f, block_y : block_y + block_length, block_x : block_x + block_length, 0
+                    ].mean()
+                    motion_vecs[f, v, u, 1:2] = pixel_motion_vecs[
+                        f, block_y : block_y + block_length, block_x : block_x + block_length, 1
+                    ].mean()
+
+    return motion_vecs.astype(np.float32)
+
+
+def get_macroblock_foreground_status_frames(motion_vector_frames: npt.NDArray[np.float32]) -&gt npt.NDArray[np.uint8]:
+    """
+    Returns a numpy array of shape (number of frames, macroblock grid height, macroblock grid width)
+    where each entry in the array is a 0 or a 1. The value at location [f, v, u] indicates whether
+    the macroblock of frame f at vertical coordinate v and horizontal coordinate u in a grid of
+    macroblocks in each frame is part of the background or a foreground object. A value of 1 means
+    it is part of a foreground obejct. A value of 0 means it is part of a background object.
+    """
+    num_frames = motion_vector_frames.shape[0]
+    grid_height = motion_vector_frames.shape[1]
+    grid_width = motion_vector_frames.shape[2]
+    foreground_status_frames = np.zeros((num_frames, grid_height, grid_width)).astype(np.uint8)
+
+    motion_vector_datasets = motion_vector_frames.reshape(
+        (num_frames, grid_height * grid_width, motion_vector_frames.shape[3])
+    )
+
+    for f in tqdm(range(1, num_frames), "Calculating Macroblock Foreground Status Information for All Frames"):
+        frame_vectors = motion_vector_datasets[f, :, :]
+        norms = np.linalg.norm(frame_vectors, axis=1)
+        min_norm = np.min(norms)
+        max_norm = np.max(norms)
+        norm_weights = (norms - min_norm) / (max_norm - min_norm)
+
+        scaled_frame_vectors = np.nan_to_num((frame_vectors / np.stack((norms, norms), axis=1))) * np.stack(
+            (norm_weights, norm_weights), axis=1
+        )
+
+        if f == 29:
+            
+            import matplotlib.pyplot as plt
+            print(scaled_frame_vectors.shape)
+            print(frame_vectors.shape)
+            plt.scatter(frame_vectors[:, 0], frame_vectors[:, 1])
+            plt.xlabel("X Component")
+            plt.ylabel("Y Component")
+            plt.title("Original Frame 30 Motion Vectors")
+            plt.show()
+            plt.scatter(scaled_frame_vectors[:, 0], scaled_frame_vectors[:, 1])
+            plt.xlabel("X Component")
+            plt.ylabel("Y Component")
+            plt.title("Scaled Frame 30 Motion Vectors")
+            plt.show()
+
+        clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=0.005, linkage="single").fit(
+            scaled_frame_vectors
+        )
+
+        foreground_status_frames[f, :, :] = get_foreground_status_frame_from_clustering(
+            clustering.labels_.reshape((grid_height, grid_width))
+        )
+
+    #return interframe_foreground_status_correction(intraframe_foreground_status_correction(foreground_status_frames))
+    return foreground_status_frames
+
+
+def get_foreground_status_frame_from_clustering(motion_vector_clusters: npt.NDArray[np.int32]) -&gt npt.NDArray[np.uint8]:
+    """
+    Returns a numpy array of shape (macroblock grid height, macroblock grid width) similar to
+    the numpy array returned by the function get_macroblock_foreground_status_frames but for a
+    single frame.
+    """
+    cluster_ids, vector_counts_by_id = np.unique(motion_vector_clusters, return_counts=True)
+    cluster_id_count_map = dict(zip(cluster_ids, vector_counts_by_id, strict=True))
+
+    largest_cluster_id = -1
+    largest_cluster_vector_count = -1
+
+    for cluster_id, vector_count in cluster_id_count_map.items():
+        if vector_count &gt largest_cluster_vector_count:
+            largest_cluster_id = cluster_id
+            largest_cluster_vector_count = vector_count
+
+    # Any block with a cluster id not equal to the largest cluster's id is a
+    # foreground object, and so should have a foreground status of 1 (True)
+    foreground_status_frame = np.zeros_like(motion_vector_clusters).astype(np.uint8)
+    foreground_status_frame = (motion_vector_clusters != largest_cluster_id).astype(np.uint8)
+    return foreground_status_frame
+
+
+def is_surrounded_by_foreground(frame: npt.NDArray[np.uint8], y: int, x: int, window_length: int) -&gt bool:
+    """
+    Return true if there is at least one foreground vector within
+    distance window_length of the vector at (x, y) in all four
+    directions (with certain exceptions for vectors near the edge
+    of the frame).
+    """
+    frame_height = frame.shape[0]
+    frame_width = frame.shape[1]
+
+    right_x = x + window_length if x + window_length &lt frame_width else frame_width - 1
+    left_x = x - window_length if x - window_length &gt= 0 else 0
+    bottom_y = y + window_length if y + window_length &lt frame_height else frame_height - 1
+    top_y = y - window_length if y - window_length &gt= 0 else 0
+
+    in_left = np.any(frame[y, left_x:x] == 1) if x + window_length &lt frame_width else True
+    in_right = np.any(frame[y, x:right_x] == 1) if x - window_length &gt= 0 else True
+    in_top = np.any(frame[bottom_y:y, x] == 1) if y + window_length &lt frame_height else True
+    in_bottom = np.any(frame[y:top_y, x] == 1) if y - window_length &gt= 0 else True
+
+    return (bool)(in_left and in_right and in_top and in_bottom)
+
+
+def bound_search(
+    start_point: npt.NDArray[np.int16], search_rad: int, padded_frame: npt.NDArray[np.uint8]
+) -&gt npt.NDArray[np.int16]:
+    """
+    Performs a bounded BFS search around a background macroblock to see if it is in a region
+    of background macroblocks surrounded within a certain distance by foreground macroblocks.
+    If so, the macroblock grid coordinates of all of the background macroblocks in the
+    surrounded region are returned.
+    """
+    rad = 0
+    failed_points = np.array([[-1, -1]])
+    current_level_points = np.vstack((np.array([[-1, -1]]), start_point))
+    next_level_points = np.array([[-1, -1]])
+    visited = np.array([[-1, -1]])
+    empty = np.array([[-1, -1]])
+
+    while rad &lt= search_rad:
+        rad += 1
+        for p in current_level_points[1:, :]:
+            visited = np.vstack((visited, p))
+            p_u = p[0]
+            p_v = p[1]
+            if padded_frame[p_v, p_u] == 0:
+                failed_points = np.vstack((failed_points, p))
+                adjacent_points = np.array([[p_u - 1, p_v], [p_u + 1, p_v], [p_u, p_v - 1], [p_u, p_v + 1]])
+                for a in adjacent_points:
+                    is_in = a.tolist() in visited.tolist()
+                    if not is_in:
+                        next_level_points = np.vstack((next_level_points, a))
+
+        if (next_level_points == empty).all():
+            return failed_points[1:, :]
+
+        current_level_points = next_level_points
+        next_level_points = np.array([[-1, -1]])
+
+    return np.array([[-1, -1]]).astype(np.int16)
+
+
+def get_bounding_boxes(frame: npt.NDArray[np.uint8]) -&gt Tuple[npt.NDArray[np.int16], npt.NDArray[np.int16]]:
+    """
+    Get bounding boxes around clusters of foreground macroblocks
+    """
+    foreground_points = np.stack(np.where(frame == 1)).T
+    if foreground_points.size == 0:
+        return (foreground_points, foreground_points)
+
+    clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=1.1, linkage="single").fit(
+        foreground_points
+    )
+    num_clusters = np.max(clustering.labels_) + 1
+    min_coords = np.zeros((num_clusters, 2))
+    max_coords = np.zeros((num_clusters, 2))
+    for c in range(num_clusters):
+        cluster_points = foreground_points[np.concatenate(np.where(clustering.labels_ == c))]
+        y_vals = cluster_points[:, 0]
+        x_vals = cluster_points[:, 1]
+        min_coords[c, :] = np.array([np.min(y_vals), np.min(x_vals)])
+        max_coords[c, :] = np.array([np.max(y_vals), np.max(x_vals)])
+        if (min_coords[c, :] == max_coords[c, :]).all():
+            min_coords[c, :] = np.array([-1, -1])
+            max_coords[c, :] = np.array([-1, -1])
+
+    min_coords = min_coords[np.where(min_coords[:, 0] != -1)[0]]
+    max_coords = max_coords[np.where(max_coords[:, 0] != -1)[0]]
+
+    return (min_coords.astype(np.int16), max_coords.astype(np.int16))
+
+
+# pylint: disable=too-many-nested-blocks
+def intraframe_foreground_status_correction(
+    foreground_status_frames: npt.NDArray[np.uint8], search_rad: int = 4
+) -&gt npt.NDArray[np.uint8]:
+    """
+    Changes a macroblock's foreground status to 1 (True) based on certain citeria
+    regarding the neighborhood around that macroblock.
+    """
+    frames = foreground_status_frames.shape[0]
+    grid_height = foreground_status_frames.shape[1]
+    grid_width = foreground_status_frames.shape[2]
+    empty_array = np.array([[-1, -1]])
+
+    corrected_foreground_status_frames = np.copy(foreground_status_frames)
+
+    for f in tqdm(range(0, frames), "Intraframe Foreground Status Correction"):
+        padded_status_frame = np.pad(foreground_status_frames[f, :, :], search_rad, "constant", constant_values=1)
+        check_status_frame = np.copy(padded_status_frame)
+        bounding_box_mins, bounding_box_maxs = get_bounding_boxes(foreground_status_frames[f, :, :])
+        bounding_box_mins = bounding_box_mins + search_rad
+        bounding_box_maxs = bounding_box_maxs + search_rad
+        for b in range(bounding_box_mins.size // 2):
+            for v in range(bounding_box_mins[b, 0], bounding_box_maxs[b, 0]):
+                for u in range(bounding_box_mins[b, 1], bounding_box_maxs[b, 1]):
+                    if check_status_frame[v, u] == 0:
+                        results = bound_search(np.array([u, v]), search_rad, padded_status_frame)
+                        if not (results == empty_array).all():
+                            padded_status_frame[results[:, 1], results[:, 0]] = 1
+                            check_status_frame[results[:, 1], results[:, 0]] = 1
+
+        corrected_foreground_status_frames[f, :, :] = padded_status_frame[
+            search_rad : search_rad + grid_height, search_rad : search_rad + grid_width
+        ]
+
+    return corrected_foreground_status_frames
+
+
+def interframe_foreground_status_correction(foreground_status_frames: npt.NDArray[np.uint8]) -&gt npt.NDArray[np.uint8]:
+    """
+    Changes a macroblock's foreground status to 1 (True) based on certain citeria
+    regarding the foreground status of that macroblock in the previous and next
+    frames.
+    """
+    frames = foreground_status_frames.shape[0]
+    grid_height = foreground_status_frames.shape[1]
+    grid_width = foreground_status_frames.shape[2]
+
+    corrected_foreground_status_frames = foreground_status_frames.copy()
+
+    for f in range(1, frames - 1):
+        for v in range(grid_height):
+            for u in range(grid_width):
+                if foreground_status_frames[f - 1, v, u] == 1 and foreground_status_frames[f + 1, v, u] == 1:
+                    corrected_foreground_status_frames[f, v, u] = 1
+                elif foreground_status_frames[f - 1, v, u] == 0 and foreground_status_frames[f + 1, v, u] == 0:
+                    corrected_foreground_status_frames[f, v, u] = 0
+
+    return corrected_foreground_status_frames
+
+
+def draw_motion_vectors(
+    input_video: npt.NDArray[np.float32],
+    motion_vecs: npt.NDArray[np.float32],
+    block_length: int,
+    vec_color: tuple[int, int, int] = (0, 255, 0),
+) -&gt npt.NDArray[np.float32]:
+    """
+    Returns a copy of input_video but with motion vectors drawn on each block
+    of each frame in the centers of the blocks.
+
+    Args:
+        input_video (npt.NDArray[np.float32]): Numpy array representing a video.
+        motion_vecs (npt.NDArray[np.float32]): A numpy array representing the motion vectors
+                                               of the blocks in each frame.
+        block_length (int): Side-length of the blocks to calculate motion vectors for.
+        vec_color (tuple): A tuple representing a color in RGB format used to color the vectors.
+        vec_thickness (int): The thicknes of the drawn vectors.
+
+    Returns:
+        numpy.typing.NDArray[np.float32]: A numpy array representing the video with the vectors
+                                          drawn on it.
+    """
+    frames = motion_vecs.shape[0]
+    v_height = motion_vecs.shape[1]
+    u_width = motion_vecs.shape[2]
+
+    vec_video = input_video.copy()
+
+    for f in tqdm(range(frames), "Writing Motion Vector Arrows to Video"):
+        for v in range(v_height):
+            for u in range(u_width):
+                start_point = (int(u * block_length + (block_length // 2)), int(v * block_length + (block_length // 2)))
+                end_point = (
+                    int((u * block_length + (block_length // 2)) + motion_vecs[f, v, u, 0]),
+                    int((v * block_length + (block_length // 2)) + motion_vecs[f, v, u, 1]),
+                )
+                vec_video[f] = cv2.arrowedLine(input_video[f], start_point, end_point, vec_color, 2)
+
+    return vec_video
+
+
+def draw_motion_vectors_with_foreground_indicated(
+    input_video: npt.NDArray[np.float32],
+    motion_vecs: npt.NDArray[np.float32],
+    status_vecs: npt.NDArray[np.float32],
+    block_length: int,
+) -&gt npt.NDArray[np.float32]:
+    """
+    Similar to the draw_motion_vectors function but with vectors colored based
+    on whether they represent the motion of a macroblock estimated to be part
+    of the background or a foreground object.
+    """
+    frames = motion_vecs.shape[0]
+    v_height = motion_vecs.shape[1]
+    u_width = motion_vecs.shape[2]
+
+    vec_video = input_video.copy()
+
+    for f in tqdm(range(frames), "Writing Motion Vector Arrows with Foreground Indicated to Video"):
+        for v in range(v_height):
+            for u in range(u_width):
+                block_status = status_vecs[f, v, u]
+                vec_color = (0, 255, 0) if block_status == 1 else (255, 0, 0)
+                start_point = (int(u * block_length + (block_length // 2)), int(v * block_length + (block_length // 2)))
+                end_point = (
+                    int((u * block_length + (block_length // 2)) + motion_vecs[f, v, u, 0]),
+                    int((v * block_length + (block_length // 2)) + motion_vecs[f, v, u, 1]),
+                )
+                vec_video[f] = cv2.arrowedLine(input_video[f], start_point, end_point, vec_color, 2)
+
+    return vec_video
+
+
+# pylint: disable=too-many-locals
+def create_macroblock_list(
+    input_video: npt.NDArray[np.uint8],
+    foreground_status_frames: npt.NDArray[np.uint8],
+    macroblock_length: int = 16,
+    n1: int = 0,
+    n2: int = 0,
+) -&gt List[MacroBlock]:
+    """
+    Generates a list of MacroBlock objects for the input_video based on the
+    calculated foreground statuses of the macroblocks in that video
+    """
+    num_frames = input_video.shape[0]
+    grid_height = input_video.shape[1] // macroblock_length
+    grid_width = input_video.shape[2] // macroblock_length
+
+    macroblocks = []
+
+    for f in tqdm(range(num_frames), "Creating Macroblocks for All Frames"):
+        for v in range(grid_height):
+            for u in range(grid_width):
+                start_x = u * macroblock_length
+                start_y = v * macroblock_length
+
+                y_block = BlocksNxN.from_2d_array(
+                    input_video[f, start_y : (start_y + macroblock_length), start_x : (start_x + macroblock_length), 0]
+                )
+                cr_block = BlocksNxN.from_2d_array(
+                    input_video[f, start_y : (start_y + macroblock_length), start_x : (start_x + macroblock_length), 1]
+                )
+                cb_block = BlocksNxN.from_2d_array(
+                    input_video[f, start_y : (start_y + macroblock_length), start_x : (start_x + macroblock_length), 2]
+                )
+
+                macroblocks.append(
+                    MacroBlock.from_blocks_nxn(foreground_status_frames[f, v, u], y_block, cr_block, cb_block, n1, n2)
+                )
+
+    return macroblocks
+    </code>
+    </pre>
+      </div>
+    </div>
+  </body>
+</html>

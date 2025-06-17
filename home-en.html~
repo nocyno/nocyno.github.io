@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="../styles/home-en.css">
+  </head>
+
+  <body>
+    <div id="overview">
+      <div id="portraitBox">
+	<img id="selfPortrait" src="../resources/Broseki.png">
+      </div>
+      <div id="nameBox">
+	<p id="nameText">Jacob Waite </p>
+      </div>
+    </div>
+
+    <div id="menu">
+      <hr class="menuItemDivider">
+      <div class="menuItem">
+	<p class="menuItemText">Bio</p>
+      </div>
+      <hr class="menuItemDivider">
+      <div class="menuItem">
+	<p class="menuItemText">CV</p>
+      </div>
+      <hr class="menuItemDivider">
+      <div class="menuItem">
+	<p class="menuItemText">Projects</p>
+      </div>
+    </div>
+  </body>
+</html>
+
