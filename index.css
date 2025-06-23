@@ -52,6 +52,7 @@ a.menuItemText {
     animation-name: menuItemTextAnimation;
     animation-duration: 1.5s;
     animatation-iteration-count: infinite;
+    color: black;
 }
 
 a.menuItemText:visited {
